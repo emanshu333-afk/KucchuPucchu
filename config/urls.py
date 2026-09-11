@@ -5,12 +5,13 @@ from django.contrib import admin
 from django.urls import path, include
 from django.conf import settings
 from django.conf.urls.static import static
-from django.views.generic import TemplateView
 from drf_spectacular.views import SpectacularAPIView, SpectacularSwaggerView, SpectacularRedocView
+from PrepPilot.views import dashboard_3d
 
 urlpatterns = [
-    # Home page
-    path('', TemplateView.as_view(template_name='dashboard.html'), name='home'),
+    # Home page - 3D Dashboard
+    path('', dashboard_3d, name='home'),
+    path('dashboard/', dashboard_3d, name='dashboard'),
     
     path('admin/', admin.site.urls),
     
@@ -29,9 +30,3 @@ urlpatterns = [
 if settings.DEBUG:
     urlpatterns += static(settings.MEDIA_URL, document_root=settings.MEDIA_ROOT)
     urlpatterns += static(settings.STATIC_URL, document_root=settings.STATIC_ROOT)
-    
-    # Debug toolbar - commented out as optional dependency
-    # import debug_toolbar
-    # urlpatterns = [
-    #     path('__debug__/', include(debug_toolbar.urls)),
-    # ] + urlpatterns

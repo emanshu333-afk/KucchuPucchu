@@ -25,6 +25,7 @@ env = environ.Env(
     EMAIL_HOST_USER=(str, ''),
     EMAIL_HOST_PASSWORD=(str, ''),
     FRONTEND_URL=(str, 'http://localhost:3000'),
+    USE_SQLITE=(bool, True),  # Use SQLite for development by default
 )
 
 # Read .env file
@@ -93,21 +94,31 @@ TEMPLATES = [
 
 WSGI_APPLICATION = 'config.wsgi.application'
 
-# Database
-DATABASES = {
-    'default': {
-        'ENGINE': 'django.db.backends.postgresql',
-        'NAME': env('DB_NAME'),
-        'USER': env('DB_USER'),
-        'PASSWORD': env('DB_PASSWORD'),
-        'HOST': env('DB_HOST'),
-        'PORT': env('DB_PORT'),
-        'CONN_MAX_AGE': 60,
-        'OPTIONS': {
-            'connect_timeout': 10,
-        },
+# Database - Use SQLite for development, PostgreSQL for production
+USE_SQLITE = env('USE_SQLITE')
+
+if USE_SQLITE:
+    DATABASES = {
+        'default': {
+            'ENGINE': 'django.db.backends.sqlite3',
+            'NAME': BASE_DIR / 'db.sqlite3',
+        }
     }
-}
+else:
+    DATABASES = {
+        'default': {
+            'ENGINE': 'django.db.backends.postgresql',
+            'NAME': env('DB_NAME'),
+            'USER': env('DB_USER'),
+            'PASSWORD': env('DB_PASSWORD'),
+            'HOST': env('DB_HOST'),
+            'PORT': env('DB_PORT'),
+            'CONN_MAX_AGE': 60,
+            'OPTIONS': {
+                'connect_timeout': 10,
+            },
+        }
+    }
 
 # Custom User Model
 AUTH_USER_MODEL = 'PrepPilot.User'
@@ -229,7 +240,7 @@ CACHES = {
 }
 
 # Email
-EMAIL_BACKEND = 'django.core.mail.backends.smtp.EmailBackend'
+EMAIL_BACKEND = 'django.core.mail.backends.console.EmailBackend'
 EMAIL_HOST = env('EMAIL_HOST')
 EMAIL_PORT = env('EMAIL_PORT')
 EMAIL_USE_TLS = env('EMAIL_USE_TLS')
