@@ -17,7 +17,7 @@ class User(AbstractUser):
     # Profile information
     phone = models.CharField(max_length=20, blank=True)
     date_of_birth = models.DateField(null=True, blank=True)
-    avatar = models.ImageField(upload_to='avatars/', null=True, blank=True)
+    avatar = models.FileField(upload_to='avatars/', null=True, blank=True)
     
     # Study preferences
     preferred_study_hours_per_day = models.DecimalField(

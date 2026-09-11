@@ -3,290 +3,62 @@
 {% block title %}Dashboard - PrepPilot{% endblock %}
 
 {% block content %}
-<div class="row">
-    <!-- Active Exams -->
-    <div class="col-12 mb-4">
-        <div class="d-flex justify-content-between align-items-center mb-3">
-            <h3><i class="bi bi-journal-check me-2"></i>Active Exams</h3>
-            <a href="{% url 'exams_list' %}" class="btn btn-outline-primary btn-sm">View All</a>
-        </div>
-        
-        {% if active_exams %}
-        <div class="row">
-            {% for exam in active_exams %}
-            <div class="col-md-6 col-lg-4 mb-3">
-                <div class="card h-100 exam-card">
-                    <div class="card-body">
-                        <div class="d-flex justify-content-between align-items-start mb-2">
-                            <h5 class="card-title mb-0">{{ exam.name }}</h5>
-                            <span class="badge bg-{% if exam.exam_type == 'entrance' %}primary{% elif exam.exam_type == 'board' %}success{% elif exam.exam_type == 'competitive' %}warning{% else %}info{% endif %}">
-                                {{ exam.get_exam_type_display }}
-                            </span>
-                        </div>
-                        <p class="card-text text-muted small mb-2">{{ exam.conducting_body }}</p>
-                        
-                        <div class="d-flex justify-content-between align-items-center mb-3">
-                            <div>
-                                <span class="badge bg-{% if exam.days_remaining <= 7 %}danger{% elif exam.days_remaining <= 30 %}warning{% else %}success{% endif %}">
-                                    {{ exam.days_remaining }} days left
-                                </span>
-                            </div>
-                            <small class="text-muted">{{ exam.exam_date|date:"M d, Y" }}</small>
-                        </div>
-                        
-                        {% if exam.readiness_score is not None %}
-                        <div class="mb-3">
-                            <div class="d-flex justify-content-between mb-1">
-                                <small>Readiness Score</small>
-                                <strong>{{ exam.readiness_score|floatformat:0 }}/100</strong>
-                            </div>
-                            <div class="progress" style="height: 8px;">
-                                <div class="progress-bar bg-{% if exam.readiness_score >= 70 %}success{% elif exam.readiness_score >= 50 %}warning{% else %}danger{% endif %}" 
-                                     style="width: {{ exam.readiness_score }}%"></div>
-                            </div>
-                        </div>
-                        {% endif %}
-                        
-                        <a href="{% url 'exam_detail' exam.id %}" class="btn btn-primary w-100">View Details</a>
-                    </div>
-                </div>
-            </div>
-            {% endfor %}
-        </div>
-        {% else %}
-        <div class="text-center py-5">
-            <i class="bi bi-calendar-plus display-1 text-muted"></i>
-            <h4 class="mt-3">No active exams</h4>
-            <p class="text-muted">Add your first exam to get started</p>
-            <a href="{% url 'exam_create' %}" class="btn btn-primary">
-                <i class="bi bi-plus-circle me-1"></i>Add Exam
-            </a>
-        </div>
-        {% endif %}
-    </div>
-    
-    <!-- Today's Study Plan -->
-    <div class="col-12 mb-4">
-        <div class="d-flex justify-content-between align-items-center mb-3">
-            <h3><i class="bi bi-calendar-day me-2"></i>Today's Study Plan</h3>
-            <a href="{% url 'study_plan' %}" class="btn btn-outline-primary btn-sm">Full Schedule</a>
-        </div>
-        
-        {% if today_plans %}
-        {% for plan in today_plans %}
-        <div class="card mb-3">
-            <div class="card-header d-flex justify-content-between align-items-center">
-                <h5 class="mb-0">{{ plan.exam.name }}</h5>
-                <span class="badge bg-{{ plan.status|lower }}">{{ plan.get_status_display }}</span>
-            </div>
-            <div class="card-body">
-                <div class="row mb-3">
-                    <div class="col-md-3">
-                        <div class="text-center p-3 bg-light rounded">
-                            <div class="display-6 fw-bold">{{ plan.total_hours|floatformat:1 }}</div>
-                            <small class="text-muted">Hours Planned</small>
-                        </div>
-                    </div>
-                    <div class="col-md-3">
-                        <div class="text-center p-3 bg-light rounded">
-                            <div class="display-6 fw-bold">{{ plan.completion_percentage|floatformat:0 }}%</div>
-                            <small class="text-muted">Complete</small>
-                        </div>
-                    </div>
-                    <div class="col-md-6">
-                        <div class="progress" style="height: 12px;">
-                            <div class="progress-bar" style="width: {{ plan.completion_percentage }}%"></div>
-                        </div>
-                    </div>
-                </div>
-                
-                <div class="table-responsive">
-                    <table class="table table-sm table-hover mb-0">
-                        <thead>
-                            <tr>
-                                <th>Time</th>
-                                <th>Topic</th>
-                                <th>Type</th>
-                                <th>Duration</th>
-                                <th>Status</th>
-                                <th>Actions</th>
-                            </tr>
-                        </thead>
-                        <tbody>
-                            {% for block in plan.blocks.all %}
-                            <tr>
-                                <td>
-                                    {% if block.started_at %}
-                                    {{ block.started_at|time:"H:i" }}
-                                    {% else %}
-                                    --:--
-                                    {% endif %}
-                                </td>
-                                <td>{{ block.topic.name|default:"General" }}</td>
-                                <td>
-                                    <span class="badge bg-{% if block.block_type == 'learn' %}info{% elif block.block_type == 'practice' %}primary{% elif block.block_type == 'test' %}warning{% elif block.block_type == 'revise' %}success{% else %}secondary{% endif %}">
-                                        {{ block.get_block_type_display }}
-                                    </span>
-                                </td>
-                                <td>{{ block.planned_duration }} min</td>
-                                <td>
-                                    <span class="badge bg-{% if block.status == 'completed' %}success{% elif block.status == 'in_progress' %}primary{% elif block.status == 'skipped' %}secondary{% else %}warning{% endif %}">
-                                        {{ block.get_status_display }}
-                                    </span>
-                                </td>
-                                <td>
-                                    {% if block.status == 'pending' %}
-                                    <button class="btn btn-sm btn-outline-primary start-block" data-block-id="{{ block.id }}">
-                                        <i class="bi bi-play-fill"></i> Start
-                                    </button>
-                                    {% elif block.status == 'in_progress' %}
-                                    <button class="btn btn-sm btn-outline-success complete-block" data-block-id="{{ block.id }}">
-                                        <i class="bi bi-check-circle-fill"></i> Complete
-                                    </button>
-                                    {% elif block.status == 'completed' %}
-                                    <span class="text-success"><i class="bi bi-check-circle-fill"></i> Done</span>
-                                    {% endif %}
-                                </td>
-                            </tr>
-                            {% endfor %}
-                        </tbody>
-                    </table>
+<div class="container mt-5">
+    <div class="row">
+        <div class="col-md-12">
+            <div class="jumbotron bg-light p-5 rounded">
+                <h1 class="display-4">Welcome to PrepPilot</h1>
+                <p class="lead">AI-Powered Exam Preparation System</p>
+                <hr class="my-4">
+                <p>Your intelligent study companion for mastering any exam.</p>
+                <div class="btn-group" role="group">
+                    <a class="btn btn-primary btn-lg me-2" href="/api/docs/" role="button">API Documentation</a>
+                    <a class="btn btn-secondary btn-lg" href="/admin/" role="button">Admin Panel</a>
                 </div>
             </div>
         </div>
-        {% endfor %}
-        {% else %}
-        <div class="card">
-            <div class="card-body text-center py-5">
-                <i class="bi bi-calendar-x display-1 text-muted"></i>
-                <h4 class="mt-3">No study plan for today</h4>
-                <p class="text-muted">Generate a study plan from your exam dashboard</p>
+    </div>
+
+    <div class="row mt-5">
+        <div class="col-md-4">
+            <div class="card">
+                <div class="card-body">
+                    <h5 class="card-title"><i class="bi bi-book me-2"></i>Study Plans</h5>
+                    <p class="card-text">AI-generated personalized study plans tailored to your exam.</p>
+                </div>
             </div>
         </div>
-        {% endif %}
-    </div>
-    
-    <!-- Upcoming Mock Tests & Quick Stats -->
-    <div class="col-md-6 mb-4">
-        <div class="card h-100">
-            <div class="card-header">
-                <h5 class="mb-0"><i class="bi bi-stopwatch me-2"></i>Upcoming Mock Tests</h5>
+        <div class="col-md-4">
+            <div class="card">
+                <div class="card-body">
+                    <h5 class="card-title"><i class="bi bi-pencil-square me-2"></i>Mock Tests</h5>
+                    <p class="card-text">Practice with comprehensive mock exams and track your progress.</p>
+                </div>
             </div>
-            <div class="card-body">
-                {% if upcoming_mocks %}
-                <ul class="list-group list-group-flush">
-                    {% for mock in upcoming_mocks %}
-                    <li class="list-group-item d-flex justify-content-between align-items-center">
-                        <div>
-                            <strong>{{ mock.name }}</strong>
-                            <br><small class="text-muted">{{ mock.exam.name }} • {{ mock.scheduled_date|date:"M d, Y" }}</small>
-                        </div>
-                        <span class="badge bg-{% if mock.status == 'scheduled' %}warning{% elif mock.status == 'completed' %}success{% else %}danger{% endif %}">
-                            {{ mock.get_status_display }}
-                        </span>
-                    </li>
-                    {% endfor %}
-                </ul>
-                {% else %}
-                <p class="text-muted text-center py-3">No upcoming mock tests</p>
-                {% endif %}
+        </div>
+        <div class="col-md-4">
+            <div class="card">
+                <div class="card-body">
+                    <h5 class="card-title"><i class="bi bi-graph-up me-2"></i>Analytics</h5>
+                    <p class="card-text">Track your readiness score and identify weak areas.</p>
+                </div>
             </div>
         </div>
     </div>
-    
-    <div class="col-md-6 mb-4">
-        <div class="card h-100">
-            <div class="card-header">
-                <h5 class="mb-0"><i class="bi bi-graph-up me-2"></i>Readiness Trend</h5>
-            </div>
-            <div class="card-body">
-                {% if readiness_scores %}
-                <canvas id="readinessChart" height="200"></canvas>
-                {% else %}
-                <p class="text-muted text-center py-3">Take a readiness assessment to see your trend</p>
-                {% endif %}
-            </div>
+
+    <div class="row mt-5">
+        <div class="col-md-12">
+            <h2>API Endpoints</h2>
+            <p>Access PrepPilot through our REST API:</p>
+            <ul>
+                <li><code>/api/v1/auth/</code> - Authentication endpoints</li>
+                <li><code>/api/v1/exams/</code> - Exam management</li>
+                <li><code>/api/v1/study/</code> - Study planning</li>
+                <li><code>/api/v1/analytics/</code> - Analytics data</li>
+                <li><code>/api/docs/</code> - Swagger documentation</li>
+                <li><code>/admin/</code> - Django admin panel</li>
+            </ul>
         </div>
     </div>
 </div>
-
-<!-- Quick Actions -->
-<div class="row">
-    <div class="col-12">
-        <div class="card">
-            <div class="card-header">
-                <h5 class="mb-0"><i class="bi bi-lightning-charge me-2"></i>Quick Actions</h5>
-            </div>
-            <div class="card-body">
-                <div class="d-flex flex-wrap gap-2">
-                    <a href="{% url 'exam_create' %}" class="btn btn-outline-primary">
-                        <i class="bi bi-plus-circle me-1"></i>Add New Exam
-                    </a>
-                    <a href="#" class="btn btn-outline-secondary" id="generatePlanBtn">
-                        <i class="bi bi-magic me-1"></i>Generate Study Plan
-                    </a>
-                    <a href="#" class="btn btn-outline-info" id="calculateReadinessBtn">
-                        <i class="bi bi-speedometer2 me-1"></i>Check Readiness
-                    </a>
-                    <a href="#" class="btn btn-outline-warning" id="runWhatIfBtn">
-                        <i class="bi bi-question-circle me-1"></i>What-If Simulator
-                    </a>
-                    {% if unread_notifications > 0 %}
-                    <a href="{% url 'notifications' %}" class="btn btn-outline-danger">
-                        <i class="bi bi-bell-fill me-1"></i>{{ unread_notifications }} Notifications
-                    </a>
-                    {% endif %}
-                </div>
-            </div>
-        </div>
-    </div>
-</div>
-{% endblock %}
-
-{% block extra_js %}
-<script>
-    // Chart.js for readiness trend
-    {% if readiness_scores %}
-    const ctx = document.getElementById('readinessChart');
-    if (ctx) {
-        new Chart(ctx, {
-            type: 'line',
-            data: {
-                labels: [{% for score in readiness_scores %}'{{ score.calculated_at|date:"M d" }}'{% if not forloop.last %},{% endif %}{% endfor %}],
-                datasets: [{
-                    label: 'Readiness Score',
-                    data: [{% for score in readiness_scores %}{{ score.overall_score }}{% if not forloop.last %},{% endif %}{% endfor %}],
-                    borderColor: 'rgb(59, 130, 246)',
-                    backgroundColor: 'rgba(59, 130, 246, 0.1)',
-                    tension: 0.4,
-                    fill: true
-                }]
-            },
-            options: {
-                responsive: true,
-                maintainAspectRatio: false,
-                scales: {
-                    y: { min: 0, max: 100 }
-                }
-            }
-        });
-    }
-    {% endif %}
-    
-    // Quick action buttons
-    document.getElementById('generatePlanBtn')?.addEventListener('click', function(e) {
-        e.preventDefault();
-        alert('Select an exam first to generate its study plan');
-    });
-    
-    document.getElementById('calculateReadinessBtn')?.addEventListener('click', function(e) {
-        e.preventDefault();
-        alert('Select an exam first to calculate readiness');
-    });
-    
-    document.getElementById('runWhatIfBtn')?.addEventListener('click', function(e) {
-        e.preventDefault();
-        alert('Select an exam first to run what-if simulations');
-    });
-</script>
 {% endblock %}
